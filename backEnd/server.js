@@ -25,7 +25,7 @@ const fetch = require("node-fetch")
 // patreXml contains the xml parser
 const parseXml = require('xml2js').parseString
 
-var temp
+let temp
 
 //---------------------------------------------------------------------------------------------------------------
 
@@ -54,9 +54,35 @@ function getInfo () {
 }
 
 function processInfo (parsed) { 
+    let distance
+
     temp = parsed
     console.log(parsed.$.snapshotTimestamp)
-    console.log(parsed.drone[0].serialNumber[0])
-    console.log(parsed.drone[0].positionX[0])
-    console.log(parsed.drone[0].positionY[0])
+
+    for (i = 0; i < parsed.drone.length; i++) {
+        console.log(parsed.drone[i].serialNumber[0])
+        distance = getDistance(parsed.drone[i].positionX[0],parsed.drone[i].positionY[0])
+        console.log(distance)
+        if (distance <= 100000) {
+            console.log("----")
+        }
+    }
+}
+
+function getDistance (x,y) {
+    let dx
+    let dy
+    let d
+    if (x < 250000) {
+        dx = 250000 - x
+    } else {
+        dx = x - 250000
+    }
+    if (y < 250000) {
+        dy = 250000 - y
+    } else {
+        dy = y - 250000
+    }
+    d = Math.sqrt(Math.pow(dx,2)+Math.pow(dy,2))
+    return parseInt(d)
 }
