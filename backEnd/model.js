@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const schema = new mongoose.Schema(
     {
+        "pilotId": {type: String, required: true},
         "firstName": {type: String, required: true},
         "lastName": {type: String, required: true},
         "retrieved": {type: Date, required: true},
