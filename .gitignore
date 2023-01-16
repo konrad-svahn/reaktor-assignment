@@ -105,3 +105,6 @@ dist
 
 # Request and response test file
 test.http
+
+# vscode settings
+.vscode

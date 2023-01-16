@@ -7,12 +7,14 @@ require("dotenv").config()
 // PORT contains the port the server is running on
 const PORT = process.env.PORT || 3030
 
+const cors = require("cors")
+
 // setting up express for the API endpoints needed for communication with the database
 const express = require("express")
 const app = express()
 
 // setting up mongoose for communication with the mongoDB database the pilots are stored in
-const mongoose = require('mongoose')
+const mongoose = require("mongoose")
 mongoose.connect(process.env.DBURL)
 const database = mongoose.connection
 
@@ -23,20 +25,31 @@ const Model = require("./model.js")
 const fetch = require("node-fetch")
 
 // patreXml contains the xml parser
-const parseXml = require('xml2js').parseString
-
-let temp
+const parseXml = require("xml2js").parseString
 
 //---------------------------------------------------------------------------------------------------------------
 
 // checking the database connection
-database.on('error',(error) => console.log(error))
-database.on('open',() => console.log("connected to database "))
+database.on("error",(error) => console.log(error))
+database.on("open",() => console.log("connected to database "))
 
-getDroneInfo()
+// updates the database every 2 seconds 
+setInterval(getDroneInfo, 2000)
+// deletes database entries older than 10 minutes every 10 seconds
+setInterval(checkAge, 10000)
 
-//
-app.get('/', (req, res) => res.send(temp))
+app.use(express.json())
+app.use(cors())
+
+// sends all the database data on get request
+app.get("/", async (req,res) => {
+    try {
+        const all = await Model.find({})
+        res.send(all)
+    } catch (error) {
+        res.status(500).send({msg: error.message})
+    }
+});
 
 // making sure the app is listening for requests
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`))
@@ -101,7 +114,6 @@ async function managePilot (pilot, time, distance) {
     try {
         // dbInfo will be null if the pilot does not exist in the database and will return the pilot’s data if they do
         dbInfo = await Model.findOne({pilotId: pilot.pilotId}).exec()
-        console.log(dbInfo)
     
         // if the pilot does not exist in te database they are added
         if (dbInfo == null) {
@@ -116,13 +128,16 @@ async function managePilot (pilot, time, distance) {
                     distance: distance
                 })
                 model.save()
-    
+                console.log(dbInfo)
+
             } catch (error) {
                 console.log(error)
             }
         
         // if the pilot does exist in the database the distance is uppdated 
         } else {
+            console.log("updated "+dbInfo.email)
+
             /* if the distance of the current violation (distance) is shorter than the 
             shortest recorded distance (dbInfo.distance) it will become the new shortest distance
             if not the shortest recorded distance will not change*/ 
@@ -155,6 +170,37 @@ async function managePilot (pilot, time, distance) {
         console.log(error)
     }
 } 
+
+// delete old deletes all pilots that are more than 10 minutes old
+async function checkAge () {
+    // now contains the curent moment in milliseconds
+    let now = new Date().getTime()
+
+    // data contains all the data of all the pilots in the database
+    let data = await Model.find({})
+
+    // forEach loop that checks the age of every person in the database individually. 
+    data.forEach(person => {
+        // milliseconds contains the moment the last violation was recorded in milliseconds
+        let milliseconds = new Date(person.retrieved).getTime()
+
+        // if the difference between the current moment and the moment of the last recorded violation
+        // is bigger than 10 minutes the entry is deleted from the database
+        if ((now - milliseconds) > 600000) {
+            console.log(person.email)
+            deleteOld(person.pilotId)
+        }
+    })
+}
+
+async function deleteOld (id) {
+    try {
+        let del = await Model.deleteOne({pilotId: id})
+        console.log(del)
+    } catch (error) {
+        console.log(error)
+    }
+}
 
 //get distance calculates the distance to the nest based on the drones x and y coordinates 
 function getDistance (x,y) {
