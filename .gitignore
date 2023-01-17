@@ -108,3 +108,6 @@ test.http
 
 # vscode settings
 .vscode
+
+# azure deployment
+.deployment

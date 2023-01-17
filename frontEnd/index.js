@@ -1,11 +1,11 @@
-fetch("http://localhost:3030")
+fetch("https://reaktor-assignment-konrad-svahn.azurewebsites.net")
     .then(res1 => res1.json())
     .then(res2 => mnageData(res2, 0))
 
 setInterval(getpilots, 2000)
 
 function getpilots () {
-    fetch("http://localhost:3030")
+    fetch("https://reaktor-assignment-konrad-svahn.azurewebsites.net")
     .then(res1 => res1.json())
     .then(res2 => mnageData(res2, 1))
 }
