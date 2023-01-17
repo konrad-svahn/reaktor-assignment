@@ -45,7 +45,7 @@ app.use(cors())
 app.get("/", async (req,res) => {
     try {
         const all = await Model.find({})
-        res.send(all)
+        res.send(sortByTime(all))
     } catch (error) {
         res.status(500).send({msg: error.message})
     }
@@ -200,6 +200,40 @@ async function deleteOld (id) {
     } catch (error) {
         console.log(error)
     }
+}
+
+// sortByTime ordes the pilots by most recent violation 
+function sortByTime (data) {
+    /* 
+    this code loops through the data to find the pilot with the highest millisecond count.
+    it then switches places between the first object in the data and the one with the highest 
+    millisecond value so that the one with the highest value becomes first.
+    then it does the same thing again but ignoring the first value and replacing 
+    the second value with the biggest of the remaining values, which will be the second biggest one. 
+    it does this until the entire array is sorted by which pilot has the highest millisecond count
+    */
+    // temp is a variable used to remember the value of the variable that switches paces with biggest
+    let temp
+
+    for (i = 0; i < data.length; i++) {
+        // biggest is the biggest value in a given loop 
+        let biggest = 0
+
+        for (j = 0 + i; j < data.length; j++) {
+            // if it is the start of a new loop the higest examined value will be j
+            if (j == 0 + i) {
+                biggest = j
+            // compare the highest value so far to the current value and make biggest the higher of the two
+            } else if ( new Date(data[j].retrieved).getTime() > new Date(data[biggest].retrieved).getTime()) {
+                biggest = j
+            }
+        }
+        // switch the places of the current value and the biggest of the examined values 
+        temp = data[i]
+        data[i] = data[biggest]
+        data[biggest] = temp   
+    }
+    return data
 }
 
 //get distance calculates the distance to the nest based on the drones x and y coordinates 
